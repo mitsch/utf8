@@ -11,7 +11,7 @@ $(TEST_EXECUTABLE): $(TEST_OBJECTS)
 	$(EXEC_LINKER) $(TEST_OBJECTS) -o $@ -lpthread -lgtest
 
 .cpp.o:
-	$(COMPILER) $< -o $@ -c -I $(HEADER_PATH) -std=c++0x
+	$(COMPILER) $< -o $@ -c -I $(HEADER_PATH) -std=c++0x -Wall -g
 
 clean:
 	rm $(TEST_EXECUTABLE) $(TEST_OBJECTS)

@@ -135,7 +135,7 @@ namespace code {
 				assert(to <= to_limit);
 			}
 
-			if (from == from_end)
+			if (from_next == from_end)
 			{
 					return std::codecvt_base::ok;
 			}

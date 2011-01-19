@@ -6,20 +6,46 @@ class Utf8Test : public ::testing::Test {
 
 	public:
 
-			code::codecvt_utf8<char, wchar_t> conversation_strict;
+			code::codecvt_utf8<char, wchar_t> convertion_strict;
 			code::codecvt_utf8_state<wchar_t> state;
-			std::string utf8_text;
-			std::wstring unicode_text;
+			
+			char* simple_utf8_text;
+			wchar_t* simple_unicode_text;
+			size_t simple_utf8_text_length;
+			size_t simple_unicode_text_length;
+
+			void get_simple_utf8_text(char*& buffer) {
+				buffer = new char [11];
+				buffer[0] = 0x7f;
+				buffer[1] = 0xdf;
+				buffer[2] = 0xbf;
+				buffer[3] = 0xef;
+				buffer[4] = 0xbf;
+				buffer[5] = 0xbf;
+				buffer[6] = 0xf4;
+				buffer[7] = 0x8f;
+				buffer[8] = 0xbf;
+				buffer[9] = 0xbf;
+				buffer[10] = 0x00;
+			}
+
+			void get_simple_unicode_text(wchar_t*& buffer) {
+				buffer = new wchar_t [5];
+				buffer[0] = 0x7f;
+				buffer[1] = 0x7ff;
+				buffer[2] = 0xffff;
+				buffer[3] = 0x10ffff;
+				buffer[4] = 0x00;
+			}
+
 			
 			Utf8Test() {
-				const char buf1 [] = {(char)0x7f, (char)0xdf, (char)0xbf, (char)0xef, (char)0xbf, (char)0xbf,
-															(char)0xf7, (char)0xbf, (char)0xbf, (char)0xbf, (char)0x00};
-				const wchar_t buf2 [] = {0x7f, 0x7ff, 0xffff, 0x10ffff, 0x00};
-				utf8_text = std::string(buf1);
-				ASSERT_STREQ(buf1, utf8_text.c_str());
-				unicode_text = std::wstring(buf2);
-				ASSERT_STREQ(buf2, unicode_text.c_str());
+				get_simple_utf8_text(simple_utf8_text);
+				simple_utf8_text_length = strlen(simple_utf8_text);
+				get_simple_unicode_text(simple_unicode_text);
+				simple_unicode_text_length = wcslen(simple_unicode_text);
 			}
+
 };
 
 
@@ -51,35 +77,55 @@ TEST_F(Utf8Test, codecvt_utf8_state_simple_test) {
 	}
 }
 
-TEST_F(Utf8Test, codecvt_utf8_simple_test) {
-	code::codecvt_utf8_state<wchar_t> state;
-	EXPECT_EQ(-1, conversation_strict.encoding());
-	EXPECT_EQ(false, conversation_strict.always_noconv());
-	EXPECT_EQ(6, conversation_strict.max_length());
-	state = code::codecvt_utf8_state<wchar_t>();
-	EXPECT_EQ(unicode_text.length(), conversation_strict.length(state, utf8_text.c_str(), utf8_text.c_str()+utf8_text.size(), unicode_text.length()+2));
-	EXPECT_EQ(true, state.is_decoding_complete());
-	state = code::codecvt_utf8_state<wchar_t>();
-	EXPECT_EQ(unicode_text.length(), conversation_strict.length(state, utf8_text.c_str(), utf8_text.c_str()+utf8_text.size(), unicode_text.length()));
-	EXPECT_EQ(true, state.is_decoding_complete());
-	state = code::codecvt_utf8_state<wchar_t>();
-	EXPECT_EQ(unicode_text.length()-2, conversation_strict.length(state, utf8_text.c_str(), utf8_text.c_str()+utf8_text.size(), unicode_text.length()-2));
-	EXPECT_EQ(true, state.is_decoding_complete());
-	
-	char* convertion_out_buffer = new char [utf8_text.size()];
-	wchar_t* convertion_in_buffer = new wchar_t [unicode_text.size()];
 
-	{
-		state = code::codecvt_utf8_state<wchar_t>();
-		const char* out_next = 0;
-		wchar_t* in_next = 0;
-		wchar_t* buffer = new wchar_t [unicode_text.size()];
-		EXPECT_EQ(std::codecvt_base::ok, conversation_strict.in(state, utf8_text.c_str(), utf8_text.c_str()+utf8_text.size(), out_next,
-			buffer, buffer+unicode_text.size(), in_next));
-		EXPECT_STREQ(unicode_text.c_str(), buffer);
-		EXPECT_EQ(utf8_text.c_str()+utf8_text.size(), out_next);
-		EXPECT_EQ(buffer+unicode_text.size(), in_next);
-	}
+TEST_F(Utf8Test, codecvt_utf8_strict_conv_encoding) {
+	EXPECT_EQ(-1, convertion_strict.encoding());
 }
-
+TEST_F(Utf8Test, codecvt_utf8_strict_conv_always_noconv) {
+	EXPECT_EQ(false, convertion_strict.always_noconv());
+}
+TEST_F(Utf8Test, codecvt_utf8_strict_conv_max_length) {
+	EXPECT_EQ(6, convertion_strict.max_length());
+}
+TEST_F(Utf8Test, codecvt_utf8_strict_conv_length_simple_1) {
+	code::codecvt_utf8_state<wchar_t> state;
+	EXPECT_EQ(simple_unicode_text_length,
+		convertion_strict.length(state, simple_utf8_text, simple_utf8_text+simple_utf8_text_length, simple_unicode_text_length+2));
+}
+TEST_F(Utf8Test, codecvt_utf8_strict_conv_length_simple_2) {
+	code::codecvt_utf8_state<wchar_t> state;
+	EXPECT_EQ(simple_unicode_text_length,
+		convertion_strict.length(state, simple_utf8_text, simple_utf8_text+simple_utf8_text_length, simple_unicode_text_length));
+}
+TEST_F(Utf8Test, codecvt_utf8_strict_conv_length_simple_3) {
+	code::codecvt_utf8_state<wchar_t> state;
+	EXPECT_EQ(simple_unicode_text_length-2,
+		convertion_strict.length(state, simple_utf8_text, simple_utf8_text+simple_utf8_text_length, simple_unicode_text_length-2));
+}
+TEST_F(Utf8Test, codecvt_utf8_strict_conv_in_simple) {
+	code::codecvt_utf8_state<wchar_t> state;
+	const char* out_next = 0;
+	wchar_t* in_next = 0;
+	wchar_t* buffer = new wchar_t [simple_unicode_text_length];
+	EXPECT_EQ(std::codecvt_base::ok,
+		convertion_strict.in(state, simple_utf8_text, simple_utf8_text+simple_utf8_text_length, out_next, buffer, buffer+simple_unicode_text_length, in_next));
+	for (size_t s = 0; s < simple_unicode_text_length; s++) {
+		EXPECT_EQ(simple_unicode_text[s], buffer[s]);
+	}
+	EXPECT_EQ(simple_utf8_text+simple_utf8_text_length, out_next);
+	EXPECT_EQ(buffer+simple_unicode_text_length, in_next);
+}
+TEST_F(Utf8Test, codecvt_utf8_strict_conv_out_simple) {
+	code::codecvt_utf8_state<wchar_t> state;
+	char* out_next;
+	const wchar_t* in_next;
+	char* buffer = new char [simple_utf8_text_length];
+	EXPECT_EQ(std::codecvt_base::ok,
+		convertion_strict.out(state, simple_unicode_text, simple_unicode_text+simple_unicode_text_length, in_next, buffer, buffer+simple_utf8_text_length, out_next));
+	for (size_t s=0; s<simple_utf8_text_length; s++) {
+		EXPECT_EQ(simple_utf8_text[s], buffer[s]);
+	}
+	EXPECT_EQ(simple_unicode_text+simple_unicode_text_length, in_next);
+	EXPECT_EQ(buffer+simple_utf8_text_length, out_next);
+}
 
