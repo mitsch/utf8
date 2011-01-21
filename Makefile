@@ -7,6 +7,7 @@ TEST_SOURCES=$(wildcard test/*.cpp)
 TEST_OBJECTS=$(patsubst %.cpp,%.o,$(TEST_SOURCES))
 TEST_EXECUTABLE=test/test
 
+
 $(TEST_EXECUTABLE): $(TEST_OBJECTS)
 	$(EXEC_LINKER) $(TEST_OBJECTS) -o $@ -lpthread -lgtest
 
