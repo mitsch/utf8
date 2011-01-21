@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <codecvt_utf8.hpp>
+#include <cstdio>
 
 class Utf8Test : public ::testing::Test {
 
@@ -47,8 +48,6 @@ class Utf8Test : public ::testing::Test {
 			}
 
 };
-
-
 
 TEST_F(Utf8Test, codecvt_utf8_state_simple_test) {
 	EXPECT_EQ(0, state.left_characters_to_encode());
@@ -127,5 +126,38 @@ TEST_F(Utf8Test, codecvt_utf8_strict_conv_out_simple) {
 	}
 	EXPECT_EQ(simple_unicode_text+simple_unicode_text_length, in_next);
 	EXPECT_EQ(buffer+simple_utf8_text_length, out_next);
+}
+
+
+TEST_F(Utf8Test, codecvt_utf8_strict_decoding_long_file) {
+	FILE* fUtf8;
+	FILE* fUnicode;
+
+	char extern_buffer[1024];
+	size_t extern_buffer_size;
+	char* extern_buffer_start;
+	wchar_t intern_buffer[1024];
+	size_t intern_buffer_size;
+	wchar_t* intern_buffer_start;
+
+	code::codecvt_utf8_state<wchar_t> state;
+
+	fUtf8 = fopen("UTF-8-demo.txt", "r");
+	fUnicode = fopen("UNICODE-8-demo.txt", "r");
+
+	ASSERT_NEQ(NULL, fUtf8);
+	ASSERT_NEQ(NULL, fUnicode);
+
+	while (!feof(fUtf8)) {
+		extern_buffer_size = fread(extern_buffer, 1, sizeof(extern_buffer), fUtf8);
+		extern_buffer_start = extern_buffer;
+		while (extern_buffer_start != extern_buffer+extern_buffer_size) {
+			convertion_strict.in(state, extern_buffer_start, extern_buffer+extern_buffer_size, extern_buffer_start, intern_buffer);
+		}
+	}
+
+
+	fclose(fUtf8);
+	fclose(fUnicode);
 }
 
