@@ -282,7 +282,7 @@ namespace code {
 		()
 	const throw ()
 	{
-			return 0;
+			return -1;
 	}
 
 

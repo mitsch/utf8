@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <codecvt_utf8.hpp>
+#include <iterator>
 #include <cstdio>
+#include <fstream>
+#include <locale>
 
 class Utf8Test : public ::testing::Test {
 
@@ -129,35 +132,27 @@ TEST_F(Utf8Test, codecvt_utf8_strict_conv_out_simple) {
 }
 
 
-TEST_F(Utf8Test, codecvt_utf8_strict_decoding_long_file) {
-	FILE* fUtf8;
-	FILE* fUnicode;
+TEST_F(Utf8Test, codecvt_utf8_strict_final_decoding_test) {
+	std::wifstream actual("UTF-8-demo.txt");
+	std::wifstream expected("UNICODE-8-demo.txt");
 
-	char extern_buffer[1024];
-	size_t extern_buffer_size;
-	char* extern_buffer_start;
-	wchar_t intern_buffer[1024];
-	size_t intern_buffer_size;
-	wchar_t* intern_buffer_start;
+	ASSERT_EQ(true, actual.is_open());
+	ASSERT_EQ(true, expected.is_open());
 
-	code::codecvt_utf8_state<wchar_t> state;
+	code::codecvt_utf8<char, wchar_t>* c = new code::codecvt_utf8<char, wchar_t>();
+	actual.imbue(std::locale(actual.getloc(), c));
+	ASSERT_EQ(c, use_facet<std::codecvt>(actual.getloc()));
 
-	fUtf8 = fopen("UTF-8-demo.txt", "r");
-	fUnicode = fopen("UNICODE-8-demo.txt", "r");
+	std::istream_iterator<wchar_t, wchar_t> actual_iter(actual);
+	std::istream_iterator<wchar_t, wchar_t> expected_iter(expected);
+	std::istream_iterator<wchar_t, wchar_t> eos;
 
-	ASSERT_NEQ(NULL, fUtf8);
-	ASSERT_NEQ(NULL, fUnicode);
-
-	while (!feof(fUtf8)) {
-		extern_buffer_size = fread(extern_buffer, 1, sizeof(extern_buffer), fUtf8);
-		extern_buffer_start = extern_buffer;
-		while (extern_buffer_start != extern_buffer+extern_buffer_size) {
-			convertion_strict.in(state, extern_buffer_start, extern_buffer+extern_buffer_size, extern_buffer_start, intern_buffer);
-		}
+	while (actual_iter != eos && expected_iter != eos) {
+		ASSERT_EQ(*actual_iter, *expected_iter);
+		actual_iter++;
+		expected_iter++;
 	}
-
-
-	fclose(fUtf8);
-	fclose(fUnicode);
+	EXPECT_EQ(true, eos == actual_iter);
+	EXPECT_EQ(true, eos == expected_iter);
 }
 
